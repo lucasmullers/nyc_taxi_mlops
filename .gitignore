@@ -215,3 +215,4 @@ airflow/config
 airflow/.plugins
 
 data
+dbt/*.duckdb
