@@ -1,0 +1,10 @@
+nyc_taxi:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: /opt/airflow/dbt/local.duckdb
+      threads: 4
+      extensions:
+        - httpfs
+        - parquet
