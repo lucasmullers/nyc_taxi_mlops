@@ -208,3 +208,4 @@ __marimo__/
 
 
 airflow/db
+.DS_Store
