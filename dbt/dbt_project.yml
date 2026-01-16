@@ -4,9 +4,6 @@ config-version: 2
 
 profile: 'nyc_taxi'
 
-dbt-cloud:
-  project-id: 70471823528431
-
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
