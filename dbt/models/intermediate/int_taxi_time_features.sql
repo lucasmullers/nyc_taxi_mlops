@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='incremental') }}
 
 SELECT
     *,
@@ -16,3 +16,8 @@ SELECT
         ELSE 0 
     END as rush_hour
 FROM {{ ref('stg_taxi_trips') }}
+
+{% if is_incremental() %}
+    WHERE pickup_datetime >= date('{{ var("data_interval_start") }}')
+    AND pickup_datetime < date('{{ var("data_interval_end") }}')
+{% endif %}
