@@ -1,1 +1,4 @@
-astronomer-cosmos[dbt-duckdb]
+dbt-duckdb
+dbt-core
+astronomer-cosmos
+airflow-provider-duckdb
