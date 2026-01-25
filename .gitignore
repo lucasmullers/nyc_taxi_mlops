@@ -217,3 +217,5 @@ airflow/.plugins
 data
 dbt/*.duckdb
 .vscode
+
+.terraform
