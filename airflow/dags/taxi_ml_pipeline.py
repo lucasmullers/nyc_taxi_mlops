@@ -1,5 +1,6 @@
 from pathlib import Path
 from pendulum import datetime
+from airflow.hooks.base import BaseHook
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 from cosmos import ProjectConfig, ProfileConfig, DbtTaskGroup
@@ -21,11 +22,19 @@ def taxi_ml_pipeline():
     def export_duckdb_to_parquet(data_interval_start, data_interval_end):
         import duckdb
 
+        aws_conn = BaseHook.get_connection('aws_default')
+
         conn = duckdb.connect(f"{DBT_ROOT_PATH}/local.duckdb")
+        conn.execute("INSTALL httpfs;")
+        conn.execute("LOAD httpfs;")
+        conn.execute("SET s3_region = 'us-east-1'")
+        conn.execute(f"SET s3_access_key_id = '{aws_conn.login}';")
+        conn.execute(f"SET s3_secret_access_key = '{aws_conn.password}';")
         conn.sql(
-            f"COPY (SELECT * FROM main.taxi_ml_features WHERE pickup_datetime >= '{data_interval_start}' AND pickup_datetime < '{data_interval_end}') TO '{DBT_ROOT_PATH}/../data/processed/taxi_ml_features_{data_interval_start}.parquet' WITH (FORMAT 'parquet', COMPRESSION 'snappy')"
+            f"COPY (SELECT * FROM main.taxi_ml_features WHERE pickup_datetime >= '{data_interval_start}' AND pickup_datetime < '{data_interval_end}') TO 's3://nyc-mlops-data/processed/taxi_ml_features_{data_interval_start}.parquet' WITH (FORMAT 'parquet', COMPRESSION 'snappy')"
         )
 
+    aws_conn = BaseHook.get_connection('aws_default')
     start = EmptyOperator(task_id="start")
     profile_config = ProfileConfig(
         profile_name="nyc_taxi",
@@ -40,6 +49,11 @@ def taxi_ml_pipeline():
             "data_interval_start": "{{ prev_ds }}",
             "data_interval_end": "{{ ds }}",
         },
+        env_vars={
+            "S3_AWS_REGION": "us-east-1",
+            "S3_ACCESS_KEY_ID": aws_conn.login,
+            "S3_SECRET_ACCESS_KEY": aws_conn.password,
+        }
     )
 
     dbt_running_models = DbtTaskGroup(
